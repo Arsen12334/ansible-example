@@ -1,0 +1,54 @@
+---
+# Лабораторная работа 4
+# Запуск: ansible-playbook lab4.yml --ask-become-pass
+
+- name: Лабораторная работа 4
+  hosts: lab
+  become: true
+
+  vars:
+    student_surname: "Кыдыргычов"
+
+  tasks:
+
+    # 1. apt: установить пакеты htop и tree
+    #    (cron добавлен, чтобы пятая задача работала и на минимальной системе)
+    - name: Установить htop, tree и cron
+      ansible.builtin.apt:
+        name:
+          - htop
+          - tree
+          - cron
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    # 2. user: создать пользователя devuser с оболочкой /bin/bash
+    - name: Создать пользователя devuser
+      ansible.builtin.user:
+        name: devuser
+        shell: /bin/bash
+        state: present
+
+    # 3. file: каталог /opt/lab4, владелец devuser, права 0755
+    - name: Создать каталог /opt/lab4
+      ansible.builtin.file:
+        path: /opt/lab4
+        state: directory
+        owner: devuser
+        mode: "0755"
+
+    #    Кладём в /opt/lab4 (в задании указан /opt/lab1, но такого каталога нет)
+    - name: Создать файл info.txt
+      ansible.builtin.copy:
+        dest: /opt/lab4/info.txt
+        content: "Выполнил: {{ student_surname }}\n"
+        owner: devuser
+        mode: "0644"
+
+    # 5. service: cron запущен и включён в автозагрузку
+    - name: Запустить cron и включить автозапуск
+      ansible.builtin.service:
+        name: cron
+        state: started
+        enabled: true
